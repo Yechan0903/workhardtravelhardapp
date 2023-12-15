@@ -20,9 +20,15 @@ export default function App() {
   const [working,setWorking] = useState(true);
   const [text,setText] = useState("");
   const [toDos, setToDos] = useState({});
+
   useEffect(() => {
     loadToDos();
   }, []);
+  const loadToDos = async () => {
+    const s = await AsyncStorage.getItem(STORAGE_KEY)
+    s !== null ? setToDos(JSON.parse(s)) : null;
+    setWorking(JSON.parse(await AsyncStorage.getItem("@Work")))
+  }
   const travel = () => {
     setWorking(false)
     saveWork(false)
@@ -38,11 +44,7 @@ export default function App() {
   const saveToDos = async(toSave) => {
     await AsyncStorage.setItem(STORAGE_KEY,JSON.stringify(toSave));
   }; 
-  const loadToDos = async () => {
-    const s = await AsyncStorage.getItem(STORAGE_KEY)
-    s !== null ? setToDos(JSON.parse(s)) : null;
-    setWorking(JSON.parse(await AsyncStorage.getItem("@Work")))
-  }
+
   const addToDo = async() => {
     if(text ===""){
       return
@@ -55,8 +57,8 @@ export default function App() {
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
-    alert(text);
   };
+
   const deleteToDo = (id) => {
     Alert.alert("Delete To Do","Are you sure?", [
       {text: "Cancel"},
@@ -76,6 +78,8 @@ export default function App() {
     setToDos(newToDos)
     await saveToDos(newToDos);
   }
+
+ 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -96,19 +100,30 @@ export default function App() {
         placeholder={working ? "Add a To Do" : "Where do you want to go?"}
         style={styles.input} 
       />
+      
       <ScrollView>
         {Object.keys(toDos).map((key) => toDos[key].working === working ?
         <View style={styles.toDo} key={key}>
-          <Text style={styles.toDoText}>{toDos[key].text}</Text>
+     
+            {toDos[key].done === false ?
+              <Text style={styles.toDoText}>{toDos[key].text}</Text>
+              : <Text style={{...styles.toDoText, textDecorationLine:"line-through", opacity: 0.5}}>{toDos[key].text}</Text>
+            }
+
           <View style={styles.btnView}>
+            <TouchableOpacity>
+              <Text><Feather name="edit" size={22} color="white" /></Text>
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={() => doneToDo(key)}>
-              <Text style ={styles.deleteBtn}>
+              <Text style ={styles.checkBtn}>
                 {toDos[key].done === false ?
                  <Fontisto name="checkbox-passive" size={18} color="white" />
                  : <Fontisto name="checkbox-active" size={18} color="white" />
                 }
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity onPress={() => deleteToDo(key)}>
               <Text style ={styles.deleteBtn}><Feather name="x" size={24} color="white" /></Text>
             </TouchableOpacity>
@@ -156,16 +171,21 @@ const styles = StyleSheet.create({
     color:"white",
     fontSize: 16,
     fontWeight:"500",
-
   },
   deleteBtn:{
     color:"white",
     fontSize: 16,
     fontWeight:"900",
-    marginLeft:5,
+    marginLeft:3,
   },
   btnView:{
     flexDirection:"row",
     alignItems:"center"
+  },
+  checkBtn: {
+    marginLeft:7,
+  },
+  editToDoText: {
+    backgroundColor: "white"
   }
 });
